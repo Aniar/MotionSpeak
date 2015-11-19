@@ -14,13 +14,24 @@ $(document).ready(function() {
   localStorage.clear();
   localStorage["test"] = "work?";
 
-  $("#submitButton").click(function() {
+  submitButton.onclick=function(){
+     console.log("clicked!", $("#idKey").val());
+     localStorage["test1"] = "work2?";
+     var v = $("#idKey").val();
+     localStorage["key"] = v;
+  };
+
+  /* $("#submitButton").click(function() {
     console.log("clicked!", $("#idKey").val());
-    localStorage["test1"] = "work2?";
-    var k = "key";
-    var v = $("#idKey").val();
-    localStorage[k] = v;
-  });
+    $.ajax({
+      success: function( data ) {
+        localStorage["test1"] = "work2?";
+        var k = "key";
+        var v = $("#idKey").val();
+        localStorage[k] = v;
+      },
+    });
+  });*/
 
   /* $("#submitButton").click(function() {
     console.log($("#idKey").val());
