@@ -1,17 +1,25 @@
 package motionspeak.csc212.motionspeak;
 
+import android.app.Activity;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.media.AudioManager;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+
 import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardBuilder;
 import com.google.android.glass.widget.CardScrollAdapter;
 import com.google.android.glass.widget.CardScrollView;
 
-import android.app.Activity;
-import android.content.Context;
-import android.media.AudioManager;
-import android.os.Bundle;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * An {@link Activity} showing a tuggable "Hello World!" card.
@@ -23,7 +31,12 @@ import android.widget.AdapterView;
  *
  * @see <a href="https://developers.google.com/glass/develop/gdk/touch">GDK Developer Guide</a>
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements SensorEventListener{
+
+    private Timer timer;
+    private SensorManager mSensorManager;
+    private Sensor mSensor;
+    private float mAcceleration;
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -40,6 +53,11 @@ public class MainActivity extends Activity {
         super.onCreate(bundle);
 
         mView = buildView();
+
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if(mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null){
+            mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        }
 
         mCardScroller = new CardScrollView(this);
         mCardScroller.setAdapter(new CardScrollAdapter() {
@@ -82,12 +100,14 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         mCardScroller.activate();
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     protected void onPause() {
         mCardScroller.deactivate();
         super.onPause();
+        mSensorManager.unregisterListener(this);
     }
 
     /**
@@ -96,8 +116,35 @@ public class MainActivity extends Activity {
     private View buildView() {
         CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT);
 
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Log.d("MainActivity", "The linear acceleration is : " + mAcceleration);
+            }
+        }, 0, 500);
+
         card.setText(R.string.hello_world);
+        // Will this work? This will return the view once, but it doesn't
+        updateCard(card);
         return card.getView();
+    }
+
+    @Override
+    public final void onAccuracyChanged(Sensor sensor, int accuracy){
+        //Do something I guess if the accuracy changes
+    }
+
+    @Override
+    public final void onSensorChanged(SensorEvent event){
+        //Light sensors returns a single value, some return 3 values (for each axis)
+        mAcceleration = event.values[0];
+        //Log.d("MainActivity", "Acceleration is: " + mAcceleration);
+        //do something with the sensor value
+    }
+
+    public void updateCard(CardBuilder card){
+        card.setText("The value of the acceleration is : " + mAcceleration);
     }
 
 }
