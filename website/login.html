@@ -1,0 +1,63 @@
+<html>
+
+<!--
+adapted from Lecture 11 and 12 code by Philip Guo for CSC 210
+-->
+
+<head>
+<title>Motion Speak</title>
+
+<script src="jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+  localStorage.clear();
+  localStorage["test"] = "work?";
+
+  $("#submitButton").click(function() {
+    console.log("clicked!", $("#idKey").val());
+    localStorage["test1"] = "work2?";
+    var k = "key";
+    var v = $("#idKey").val();
+    localStorage[k] = v;
+  });
+
+  /* $("#submitButton").click(function() {
+    console.log($("#idKey").val());
+    $.ajax({
+      success: function( data ) {
+        console.log("You pressed submit!", $("#idKey").val());
+        var k = "userName";
+        var v = $("#idKey").val();
+        localStorage[k] = v;
+        $("#success").html("You Entered: " + $("#idKey").val());
+        setTimeout(function(){
+          window.location="../website/motionspeak.html";
+        },0);
+      },
+    });
+  });*/
+});
+</script>
+
+</head>
+  <body>
+  <h1>Welcome to Motion Speak!</h1>
+  <h2>Input ID Key: <h2>
+
+    <p>
+    ID Key: <input id="idKey" type="text" size="10"/>
+    </p>
+
+    <p>
+    <button id="submitButton">Submit</button>
+    </p>
+
+    <!-- empty placeholders -->
+    <div id="success"></div>
+
+    <hr/>
+
+    <div id="status"></div>
+  </body>
+</html>
