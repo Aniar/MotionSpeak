@@ -33,14 +33,16 @@ import java.util.TimerTask;
  *
  * @see <a href="https://developers.google.com/glass/develop/gdk/touch">GDK Developer Guide</a>
  */
-public class MainActivity extends Activity implements SensorEventListener{
+public class MainActivity extends Activity implements SensorEventListener {
 
     private Timer timer;
     private SensorManager mSensorManager;
     private Sensor mSensor;
+    private float mPrevMagField;
     private float mMagField;
     private float baseValue;
     private boolean baseValueBoolean = false;
+    private float[] mPrevMagValues = new float[3];
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -61,7 +63,7 @@ public class MainActivity extends Activity implements SensorEventListener{
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
 
-        if(mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null){
+        if (mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null) {
             mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         }
 
@@ -123,10 +125,6 @@ public class MainActivity extends Activity implements SensorEventListener{
     private View buildView() {
         CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT);
 
-        if(baseValueBoolean == false){
-            baseValue = mMagField;
-            baseValueBoolean = true;
-        }
 
         timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -134,32 +132,90 @@ public class MainActivity extends Activity implements SensorEventListener{
             public void run() {
 
                 Log.d("MainActivity", "Magnetic Field is : " + mMagField);
-                if (mMagField < (baseValue + 15) && mMagField > (baseValue - 15)) {
-                    Log.d("MainActivity", "YOU MUST MOVE");
+                Log.d("MainActivity", "Base Value is : " + baseValue);
+                if (mMagField > (baseValue + 15) || mMagField < (baseValue - 15)) {
+                    Log.d("MainActivity", "YOU ARE MOVING");
                 }
+                if (baseValueBoolean == false && mMagField != 0.0) {
+                    baseValue = mMagField;
+                    baseValueBoolean = true;
+                }
+                updatePrevMagValues(mMagField);
+                Log.d("MainActivity", "mPrevMagValues[0] is: " + mPrevMagValues[0]);
+                Log.d("MainActivity", "mPrevMagValues[1] is: " + mPrevMagValues[1]);
+                Log.d("MainActivity", "mPrevMagValues[2] is: " + mPrevMagValues[2]);
+                numInRange();
+
             }
         }, 0, 500);
 
         card.setText(R.string.hello_world);
-
         updateCard(card);
         return card.getView();
     }
 
     @Override
-    public final void onAccuracyChanged(Sensor sensor, int accuracy){
+    public final void onAccuracyChanged(Sensor sensor, int accuracy) {
         //Do something I guess if the accuracy changes
     }
 
     @Override
-    public final void onSensorChanged(SensorEvent event){
+    public final void onSensorChanged(SensorEvent event) {
         //Light sensors returns a single value, some return 3 values (for each axis)
-          mMagField = event.values[0];
+        mPrevMagField = mMagField;
+        mMagField = event.values[0];
 
     }
 
-    public void updateCard(CardBuilder card){
-          card.setText("The value of the magnetic field is : " + mMagField);
+    public void updateCard(CardBuilder card) {
+        card.setText("The value of the magnetic field is : " + mMagField);
     }
+
+    public void updatePrevMagValues(float mf) {
+
+        mPrevMagValues[2] = mPrevMagValues[1];
+        mPrevMagValues[1] = mPrevMagValues[0];
+        mPrevMagValues[0] = mf;
+
+    }
+
+    public void numInRange() {
+        int maxIndex = getMaxIndex();
+        int index1, index2;
+        if (maxIndex == 0) {
+            index1 = 1;
+            index2 = 2;
+        } else if (maxIndex == 1) {
+            index1 = 0;
+            index2 = 2;
+        } else {
+            index1 = 0;
+            index2 = 1;
+        }
+
+        if (mPrevMagValues[maxIndex] > 0) {
+            if (mPrevMagValues[maxIndex] - mPrevMagValues[index1] <= 5 && mPrevMagValues[maxIndex] - mPrevMagValues[index2] <= 5) {
+                baseValue = mPrevMagValues[2];
+            }
+        } else if (mPrevMagValues[maxIndex] < 0) {
+            if (mPrevMagValues[maxIndex] - mPrevMagValues[index1] >= -5 && mPrevMagValues[maxIndex] - mPrevMagValues[index2] >= -5) {
+                baseValue = mPrevMagValues[2];
+            }
+        }
+    }
+
+    public int getMaxIndex() {
+        int maxIndex;
+        if (Math.max(mPrevMagValues[0], mPrevMagValues[1]) == mPrevMagValues[0]) {
+            maxIndex = 0;
+        } else {
+            maxIndex = 1;
+        }
+        if (Math.max(mPrevMagValues[maxIndex], mPrevMagValues[2]) == mPrevMagValues[2]) {
+            maxIndex = 2;
+        }
+        return maxIndex;
+    }
+
 
 }
