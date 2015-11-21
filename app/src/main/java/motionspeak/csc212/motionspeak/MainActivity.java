@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -18,6 +19,7 @@ import com.google.android.glass.widget.CardBuilder;
 import com.google.android.glass.widget.CardScrollAdapter;
 import com.google.android.glass.widget.CardScrollView;
 
+import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -36,7 +38,9 @@ public class MainActivity extends Activity implements SensorEventListener{
     private Timer timer;
     private SensorManager mSensorManager;
     private Sensor mSensor;
-    private float mAcceleration;
+    private float mMagField;
+    private float baseValue;
+    private boolean baseValueBoolean = false;
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -55,8 +59,10 @@ public class MainActivity extends Activity implements SensorEventListener{
         mView = buildView();
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if(mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null){
-            mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+
+
+        if(mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null){
+            mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         }
 
         mCardScroller = new CardScrollView(this);
@@ -94,6 +100,7 @@ public class MainActivity extends Activity implements SensorEventListener{
             }
         });
         setContentView(mCardScroller);
+
     }
 
     @Override
@@ -116,16 +123,25 @@ public class MainActivity extends Activity implements SensorEventListener{
     private View buildView() {
         CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT);
 
+        if(baseValueBoolean == false){
+            baseValue = mMagField;
+            baseValueBoolean = true;
+        }
+
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                Log.d("MainActivity", "The linear acceleration is : " + mAcceleration);
+
+                Log.d("MainActivity", "Magnetic Field is : " + mMagField);
+                if (mMagField < (baseValue + 15) && mMagField > (baseValue - 15)) {
+                    Log.d("MainActivity", "YOU MUST MOVE");
+                }
             }
         }, 0, 500);
 
         card.setText(R.string.hello_world);
-        // Will this work? This will return the view once, but it doesn't
+
         updateCard(card);
         return card.getView();
     }
@@ -138,13 +154,12 @@ public class MainActivity extends Activity implements SensorEventListener{
     @Override
     public final void onSensorChanged(SensorEvent event){
         //Light sensors returns a single value, some return 3 values (for each axis)
-        mAcceleration = event.values[0];
-        //Log.d("MainActivity", "Acceleration is: " + mAcceleration);
-        //do something with the sensor value
+          mMagField = event.values[0];
+
     }
 
     public void updateCard(CardBuilder card){
-        card.setText("The value of the acceleration is : " + mAcceleration);
+          card.setText("The value of the magnetic field is : " + mMagField);
     }
 
 }
