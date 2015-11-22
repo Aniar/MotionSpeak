@@ -6,20 +6,16 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.AudioManager;
-import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.TextView;
 
-import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardBuilder;
-import com.google.android.glass.widget.CardScrollAdapter;
 import com.google.android.glass.widget.CardScrollView;
 
-import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -42,7 +38,10 @@ public class MainActivity extends Activity implements SensorEventListener {
     private float mMagField;
     private float baseValue;
     private boolean baseValueBoolean = false;
+    private boolean isMoving = false;
     private float[] mPrevMagValues = new float[3];
+    private CardBuilder card;
+    private TextView mTextView;
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -57,101 +56,70 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        mView = buildView();
+        setContentView(R.layout.activity_main);
+        mTextView = (TextView) findViewById(R.id.text_view_movement);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
 
 
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null) {
             mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         }
 
-        mCardScroller = new CardScrollView(this);
-        mCardScroller.setAdapter(new CardScrollAdapter() {
-            @Override
-            public int getCount() {
-                return 1;
-            }
-
-            @Override
-            public Object getItem(int position) {
-                return mView;
-            }
-
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                return mView;
-            }
-
-            @Override
-            public int getPosition(Object item) {
-                if (mView.equals(item)) {
-                    return 0;
-                }
-                return AdapterView.INVALID_POSITION;
-            }
-        });
-        // Handle the TAP event.
-        mCardScroller.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Plays disallowed sound to indicate that TAP actions are not supported.
-                AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-                am.playSoundEffect(Sounds.DISALLOWED);
-            }
-        });
-        setContentView(mCardScroller);
+        motionSensing();
 
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mCardScroller.activate();
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
-    }
-
-    @Override
-    protected void onPause() {
-        mCardScroller.deactivate();
-        super.onPause();
-        mSensorManager.unregisterListener(this);
-    }
-
-    /**
-     * Builds a Glass styled "Hello World!" view using the {@link CardBuilder} class.
-     */
-    private View buildView() {
-        CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT);
-
-
+    public void motionSensing(){
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
 
-                Log.d("MainActivity", "Magnetic Field is : " + mMagField);
-                Log.d("MainActivity", "Base Value is : " + baseValue);
+//                Log.d("MainActivity", "Magnetic Field is : " + mMagField);
+//                Log.d("MainActivity", "Base Value is : " + baseValue);
                 if (mMagField > (baseValue + 15) || mMagField < (baseValue - 15)) {
-                    Log.d("MainActivity", "YOU ARE MOVING");
+                    Log.d("MainActivity", "YOU ARE MOVING (if statement)");
+                    isMoving = true;
+                } else {
+                    isMoving = false;
                 }
                 if (baseValueBoolean == false && mMagField != 0.0) {
                     baseValue = mMagField;
                     baseValueBoolean = true;
                 }
                 updatePrevMagValues(mMagField);
-                Log.d("MainActivity", "mPrevMagValues[0] is: " + mPrevMagValues[0]);
-                Log.d("MainActivity", "mPrevMagValues[1] is: " + mPrevMagValues[1]);
-                Log.d("MainActivity", "mPrevMagValues[2] is: " + mPrevMagValues[2]);
+
                 numInRange();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateCard();
+                    }
+                });
 
             }
         }, 0, 500);
+    }
 
-        card.setText(R.string.hello_world);
-        updateCard(card);
-        return card.getView();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        timer = new Timer();
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        motionSensing();
+        mSensorManager.unregisterListener(this);
     }
 
     @Override
@@ -167,16 +135,21 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     }
 
-    public void updateCard(CardBuilder card) {
-        card.setText("The value of the magnetic field is : " + mMagField);
+    public void updateCard() {
+        if(isMoving == true){
+            mTextView.setText("You are moving!");
+            Log.d("Main", "you are supposedly moving update view");
+        } else if (isMoving == false) {
+            mTextView.setText("You aren't moving");
+            Log.d("Main", "you aRENT' !!moving update view");
+
+        }
     }
 
     public void updatePrevMagValues(float mf) {
-
         mPrevMagValues[2] = mPrevMagValues[1];
         mPrevMagValues[1] = mPrevMagValues[0];
         mPrevMagValues[0] = mf;
-
     }
 
     public void numInRange() {
