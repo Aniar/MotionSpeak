@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -144,7 +145,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             Log.d("Main", "you aRENT' !!moving update view");
 
         }
-    }
+
 
     public void updatePrevMagValues(float mf) {
         mPrevMagValues[2] = mPrevMagValues[1];
@@ -189,6 +190,5 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
         return maxIndex;
     }
-
 
 }
