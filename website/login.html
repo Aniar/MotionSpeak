@@ -7,52 +7,11 @@ adapted from Lecture 11 and 12 code by Philip Guo for CSC 210
 <head>
 <title>Motion Speak</title>
 
-<script src="jquery-1.11.3.min.js"></script>
 
-<script type="text/javascript">
-$(document).ready(function() {
-  localStorage.clear();
-  localStorage["test"] = "work?";
-
-  submitButton.onclick=function(){
-     console.log("clicked!", $("#idKey").val());
-     localStorage["test1"] = "work2?";
-     var v = $("#idKey").val();
-     localStorage["key"] = v;
-  };
-
-  /* $("#submitButton").click(function() {
-    console.log("clicked!", $("#idKey").val());
-    $.ajax({
-      success: function( data ) {
-        localStorage["test1"] = "work2?";
-        var k = "key";
-        var v = $("#idKey").val();
-        localStorage[k] = v;
-      },
-    });
-  });*/
-
-  /* $("#submitButton").click(function() {
-    console.log($("#idKey").val());
-    $.ajax({
-      success: function( data ) {
-        console.log("You pressed submit!", $("#idKey").val());
-        var k = "userName";
-        var v = $("#idKey").val();
-        localStorage[k] = v;
-        $("#success").html("You Entered: " + $("#idKey").val());
-        setTimeout(function(){
-          window.location="../website/motionspeak.html";
-        },0);
-      },
-    });
-  });*/
-});
-</script>
 
 </head>
   <body>
+  <div id="contentArea" style="width: 100%; height: 60%">
   <h1>Welcome to Motion Speak!</h1>
   <h2>Input ID Key: <h2>
 
@@ -69,6 +28,43 @@ $(document).ready(function() {
 
     <hr/>
 
-    <div id="status"></div>
+    </div>
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="js/plotly-latest.min.js"></script>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    localStorage.clear();
+    localStorage["test"] = "work?";
+
+    $("#submitButton").click(function(){
+      $.getJSON('data.json', function(data){
+        var yVal = [];
+        var xVal = [];
+<<<<<<< HEAD
+         var output="<ul>";
+=======
+>>>>>>> origin/master
+         // for (var i in data.try1) {
+         //   output += "<li>" + data.try1[i]['FIELD1'] + " " + data.try1[i]['FIELD2'] + "</li>"
+         // }
+         for (var i in data.try1) {
+           xVal[i] = data.try1[i]['FIELD1']
+           yVal[i] = data.try1[i]['FIELD2']
+         }
+         // output+= "</ul>"
+         var data2 = [
+            {
+              x: xVal,
+              y: yVal,
+              type: 'scatter'
+            }
+          ];
+          $("#contentArea").html(Plotly.newPlot('contentArea', data2));
+        
+      });
+    });
+  });
+</script>
   </body>
 </html>
