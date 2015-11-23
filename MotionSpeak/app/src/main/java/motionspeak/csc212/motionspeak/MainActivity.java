@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 import com.google.android.glass.widget.CardBuilder;
 import com.google.android.glass.widget.CardScrollView;
 
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -23,6 +25,7 @@ import java.util.TimerTask;
 public class MainActivity extends Activity implements SensorEventListener {
 
     private Timer timer;
+    private Timer hashTimer;
     private SensorManager mSensorManager;
     private Sensor mSensor;
     private float mPrevMagField;
@@ -31,6 +34,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private boolean baseValueBoolean = false;
     private boolean isMoving = false;
     private float[] mPrevMagValues = new float[3];
+    private ArrayList<Boolean> isMovingBooleans = new ArrayList<>();
     private CardBuilder card;
     private TextView mTextView;
 
@@ -65,6 +69,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void motionSensing(){
         timer = new Timer();
+        hashTimer = new Timer ();
+
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -74,8 +80,10 @@ public class MainActivity extends Activity implements SensorEventListener {
                 if (mMagField > (baseValue + 15) || mMagField < (baseValue - 15)) {
                     Log.d("MainActivity", "YOU ARE MOVING (if statement)");
                     isMoving = true;
+                    listBooleans(isMoving);
                 } else {
                     isMoving = false;
+                    listBooleans(isMoving);
                 }
                 if (baseValueBoolean == false && mMagField != 0.0) {
                     baseValue = mMagField;
@@ -85,15 +93,35 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 numInRange();
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateCard();
-                    }
-                });
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        updateCard();
+//                    }
+//                });
 
             }
         }, 0, 500);
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable(){
+            public void run(){
+            hashTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateCard();
+                            isMovingBooleans.clear();
+                        }
+                    });
+
+                }
+            }, 0, 5000);}
+        },10000);
+
     }
 
     @Override
@@ -124,11 +152,12 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
     public void updateCard() {
-        if (isMoving == true) {
-            mTextView.setText("You are moving!");
+        if (isMovingBooleans.contains(true)) {
+            //mTextView.setText("You are moving!");
+            mTextView.setText("");
             Log.d("Main", "you are supposedly moving update view");
-        } else if (isMoving == false) {
-            mTextView.setText("You aren't moving");
+        } else if (!isMovingBooleans.contains(true)){
+            mTextView.setText("Move a little!");
             Log.d("Main", "you aRENT' !!moving update view");
 
         }
@@ -178,5 +207,10 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
         return maxIndex;
     }
+
+    public void listBooleans(boolean moving){
+       isMovingBooleans.add(moving);
+    }
+
 
 }
