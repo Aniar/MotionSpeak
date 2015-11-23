@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.glass.widget.CardBuilder;
@@ -26,6 +27,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     private Timer timer;
     private Timer hashTimer;
+    private Timer iconTimer;
     private SensorManager mSensorManager;
     private Sensor mSensor;
     private float mPrevMagField;
@@ -37,6 +39,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private ArrayList<Boolean> isMovingBooleans = new ArrayList<>();
     private CardBuilder card;
     private TextView mTextView;
+    private ImageView mImageView;
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -54,6 +57,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         setContentView(R.layout.activity_main);
         mTextView = (TextView) findViewById(R.id.text_view_movement);
+        mImageView = (ImageView) findViewById(R.id.icon_movement);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
@@ -69,7 +73,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void motionSensing(){
         timer = new Timer();
-        hashTimer = new Timer ();
+        hashTimer = new Timer();
+        iconTimer = new Timer();
 
         timer.schedule(new TimerTask() {
             @Override
@@ -82,6 +87,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                     isMoving = true;
                     listBooleans(isMoving);
                 } else {
+                    Log.d("MainActivity", "You're apparently not moving");
                     isMoving = false;
                     listBooleans(isMoving);
                 }
@@ -96,31 +102,44 @@ public class MainActivity extends Activity implements SensorEventListener {
 //                runOnUiThread(new Runnable() {
 //                    @Override
 //                    public void run() {
-//                        updateCard();
+//                        updateIcon();
 //                    }
 //                });
 
             }
         }, 0, 500);
 
+        iconTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateIcon();
+                    }
+                });
+            }
+        }, 0, 1000);
+
         final Handler handler = new Handler();
-        handler.postDelayed(new Runnable(){
-            public void run(){
-            hashTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                hashTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateCard();
-                            isMovingBooleans.clear();
-                        }
-                    });
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                updateCard();
+                                isMovingBooleans.clear();
+                            }
+                        });
 
-                }
-            }, 0, 5000);}
-        },10000);
+                    }
+                }, 0, 5000);
+            }
+        }, 10000);
 
     }
 
@@ -149,6 +168,14 @@ public class MainActivity extends Activity implements SensorEventListener {
         mPrevMagField = mMagField;
         mMagField = event.values[0];
 
+    }
+
+    public void updateIcon(){
+        if(isMoving == true){
+            mImageView.setImageResource(R.drawable.ic_directions_run_white_24dp);
+        } else if (isMoving == false) {
+            mImageView.setImageResource(R.drawable.ic_directions_run_black_24dp);
+        }
     }
 
     public void updateCard() {
