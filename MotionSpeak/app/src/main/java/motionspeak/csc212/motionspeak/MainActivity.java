@@ -49,7 +49,6 @@ public class MainActivity extends Activity implements SensorEventListener {
     private String sensorValues = "";
     private String IDNumber;
 
-
     /**
      * {@link CardScrollView} to use as the main content view.
      */
@@ -158,6 +157,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         super.onPause();
         cancelEverything();
         mSensorManager.unregisterListener(this);
+        writeTextFile();
     }
 
     @Override
@@ -293,6 +293,5 @@ public class MainActivity extends Activity implements SensorEventListener {
             e.printStackTrace();
         }
     }
-
 
 }
