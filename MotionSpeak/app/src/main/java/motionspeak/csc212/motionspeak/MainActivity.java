@@ -7,24 +7,31 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.android.glass.widget.CardBuilder;
 import com.google.android.glass.widget.CardScrollView;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 
 public class MainActivity extends Activity implements SensorEventListener {
 
+    private boolean isRunning = false;
     private Timer timer;
     private Timer hashTimer;
     private Timer iconTimer;
@@ -37,9 +44,11 @@ public class MainActivity extends Activity implements SensorEventListener {
     private boolean isMoving = false;
     private float[] mPrevMagValues = new float[3];
     private ArrayList<Boolean> isMovingBooleans = new ArrayList<>();
-    private CardBuilder card;
     private TextView mTextView;
     private ImageView mImageView;
+    private String sensorValues = "";
+    private String IDNumber;
+
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -67,7 +76,9 @@ public class MainActivity extends Activity implements SensorEventListener {
             mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         }
 
-        motionSensing();
+        mTextView.setText("Tap to start!");
+
+        //motionSensing();
 
     }
 
@@ -80,8 +91,6 @@ public class MainActivity extends Activity implements SensorEventListener {
             @Override
             public void run() {
 
-//                Log.d("MainActivity", "Magnetic Field is : " + mMagField);
-//                Log.d("MainActivity", "Base Value is : " + baseValue);
                 if (mMagField > (baseValue + 15) || mMagField < (baseValue - 15)) {
                     Log.d("MainActivity", "YOU ARE MOVING (if statement)");
                     isMoving = true;
@@ -98,13 +107,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 updatePrevMagValues(mMagField);
 
                 numInRange();
-
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        updateIcon();
-//                    }
-//                });
+                sensorValues = sensorValues + System.currentTimeMillis() + " " + mMagField + ",";
 
             }
         }, 0, 500);
@@ -153,7 +156,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     protected void onPause() {
         super.onPause();
-        motionSensing();
+        cancelEverything();
         mSensorManager.unregisterListener(this);
     }
 
@@ -190,6 +193,11 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
+    public void cancelEverything(){
+        timer.cancel();
+        hashTimer.cancel();
+        iconTimer.cancel();
+    }
 
     public void updatePrevMagValues(float mf) {
         mPrevMagValues[2] = mPrevMagValues[1];
@@ -237,6 +245,53 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void listBooleans(boolean moving){
        isMovingBooleans.add(moving);
+    }
+
+    @Override
+    public boolean onKeyDown(int keycode, KeyEvent event){
+        if(keycode == KeyEvent.KEYCODE_DPAD_CENTER){
+            if(isRunning == false){
+                motionSensing();
+                mTextView.setText("");
+                isRunning = true;
+            } else if(isRunning == true){
+                cancelEverything();
+                writeTextFile();
+                mTextView.setText(IDNumber);
+            }
+            return true;
+        }
+        return super.onKeyDown(keycode, event);
+    }
+
+
+    public void writeTextFile(){
+
+        try {
+
+            UUID uuid = UUID.randomUUID();
+            String UUIDString = uuid.toString();
+            String split[] = UUIDString.split("-");
+            IDNumber = split[0] + ".txt";
+
+            File root = android.os.Environment.getExternalStorageDirectory();
+            File dir = new File (root.getAbsolutePath() + "/MotionSpeak");
+            File f = new File(dir, IDNumber);
+
+            f.createNewFile();
+            Log.d("file path", "result"+f.getAbsolutePath());
+            Log.d("file created", "result"+f.createNewFile());
+            FileOutputStream fOut = new FileOutputStream(f);
+            OutputStreamWriter outputWriter=new OutputStreamWriter(fOut);
+            outputWriter.write(sensorValues);
+            /** Closing the writer object */
+            outputWriter.close();
+            Log.d("success", "success"+ Environment.getExternalStorageState()+Environment.getStorageState(dir));
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 

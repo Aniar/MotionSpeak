@@ -3,6 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="motionspeak.csc212.motionspeak" >
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -18,13 +22,13 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!--<intent-filter>-->
-                <!--<action android:name="com.google.android.glass.action.VOICE_TRIGGER" />-->
-            <!--</intent-filter>-->
+            <intent-filter>
+                <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
+            </intent-filter>
 
-            <!--<meta-data-->
-                <!--android:name="com.google.android.glass.VoiceTrigger"-->
-                <!--android:resource="@xml/voice_trigger" />-->
+            <meta-data
+                android:name="com.google.android.glass.VoiceTrigger"
+                android:resource="@xml/voice_trigger" />
         </activity>
     </application>
 
