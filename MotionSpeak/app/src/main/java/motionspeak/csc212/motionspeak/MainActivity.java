@@ -1,6 +1,7 @@
 package motionspeak.csc212.motionspeak;
 
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -19,10 +20,21 @@ import android.widget.TextView;
 
 import com.google.android.glass.widget.CardScrollView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -48,6 +60,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private ImageView mImageView;
     private String sensorValues = "";
     private String IDNumber;
+    private JSONArray valuesArray;
 
     /**
      * {@link CardScrollView} to use as the main content view.
@@ -155,9 +168,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     protected void onPause() {
         super.onPause();
-        cancelEverything();
+//        cancelEverything();
         mSensorManager.unregisterListener(this);
-        writeTextFile();
     }
 
     @Override
@@ -256,7 +268,24 @@ public class MainActivity extends Activity implements SensorEventListener {
                 isRunning = true;
             } else if(isRunning == true){
                 cancelEverything();
-                writeTextFile();
+                valuesArray = parseTextIntoJSON(sensorValues);
+
+                JSONObject obj = new JSONObject();
+                try {
+                    obj.put("result", valuesArray);
+                } catch (JSONException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                //print out JSON Object
+                Log.d("Main", obj.toString());
+
+//                try {
+//                    postJSON("http://google.com", valuesArray);
+//                } catch (IOException ie) {
+//                    ie.printStackTrace();
+//                }
+
                 mTextView.setText(IDNumber);
             }
             return true;
@@ -265,33 +294,100 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
 
-    public void writeTextFile(){
+//    public void writeTextFile(){
+//
+//        try {
+//
+//            UUID uuid = UUID.randomUUID();
+//            String UUIDString = uuid.toString();
+//            String split[] = UUIDString.split("-");
+//            IDNumber = split[0] + ".txt";
+//
+//            File root = android.os.Environment.getExternalStorageDirectory();
+//            File dir = new File (root.getAbsolutePath() + "/MotionSpeak");
+//            File f = new File(dir, IDNumber);
+//
+//            f.createNewFile();
+//            Log.d("file path", "result"+f.getAbsolutePath());
+//            Log.d("file created", "result"+f.createNewFile());
+//            FileOutputStream fOut = new FileOutputStream(f);
+//            OutputStreamWriter outputWriter=new OutputStreamWriter(fOut);
+//
+//            outputWriter.write(sensorValues);
+//            /** Closing the writer object */
+//            outputWriter.close();
+//            Log.d("success", "success"+ Environment.getExternalStorageState()+Environment.getStorageState(dir));
+//        }
+//        catch (IOException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//    }
+
+    public JSONArray parseTextIntoJSON(String data){
+        String [] values = data.split(",");
+        JSONObject [] jsonValues = new JSONObject[values.length];
+        for(int i = 0; i < values.length; i++){
+            JSONObject jo = new JSONObject();
+            try {
+                String [] separatedValues = values[i].split(" ");
+                jo.put("time", separatedValues[0]);
+                jo.put("value", Float.valueOf(separatedValues[1]));
+                jsonValues[i] = jo;
+            } catch (JSONException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        JSONArray ja = new JSONArray();
+        for(int i = 0; i < jsonValues.length; i++){
+            ja.put(jsonValues[i]);
+        }
+        return ja;
+    }
+
+    public static String postJSON(String myurl, JSONArray jarr) throws IOException {
+        StringBuffer response = null;
 
         try {
+            JSONObject parameters = new JSONObject();
+            parameters.put("jsonArray", jarr);
 
-            UUID uuid = UUID.randomUUID();
-            String UUIDString = uuid.toString();
-            String split[] = UUIDString.split("-");
-            IDNumber = split[0] + ".txt";
+            URL url = new URL(myurl);
 
-            File root = android.os.Environment.getExternalStorageDirectory();
-            File dir = new File (root.getAbsolutePath() + "/MotionSpeak");
-            File f = new File(dir, IDNumber);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setReadTimeout(10000);
+            conn.setConnectTimeout(15000);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            OutputStream out = new BufferedOutputStream(conn.getOutputStream());
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
 
-            f.createNewFile();
-            Log.d("file path", "result"+f.getAbsolutePath());
-            Log.d("file created", "result"+f.createNewFile());
-            FileOutputStream fOut = new FileOutputStream(f);
-            OutputStreamWriter outputWriter=new OutputStreamWriter(fOut);
-            outputWriter.write(sensorValues);
-            /** Closing the writer object */
-            outputWriter.close();
-            Log.d("success", "success"+ Environment.getExternalStorageState()+Environment.getStorageState(dir));
+            writer.write(parameters.toString());
+            writer.close();
+            out.close();
+
+            int responseCode = conn.getResponseCode();
+            Log.d("Main", "\nSending 'POST' request to URL : " + url);
+            Log.d("Main", "Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String inputLine;
+            response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            Log.d("Main", "Response in universal: " + response.toString());
+        } catch (Exception exception) {
+            Log.d("Error", "Exception: " + exception);
         }
-        catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+
+        return response.toString();
     }
+
 
 }
