@@ -286,6 +286,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 //                    ie.printStackTrace();
 //                }
 
+                //cancelEverything();
+                writeTextFile();
                 mTextView.setText(IDNumber);
             }
             return true;
