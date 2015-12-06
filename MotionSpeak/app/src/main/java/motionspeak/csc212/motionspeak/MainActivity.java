@@ -199,7 +199,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             mTextView.setText("");
             Log.d("Main", "you are supposedly moving update view");
         } else if (!isMovingBooleans.contains(true)){
-            mTextView.setText("Move a little!");
+            mTextView.setText("Walk across the stage");
             Log.d("Main", "you aRENT' !!moving update view");
 
         }
@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 Log.d("Main", obj.toString());
 
 //                try {
-//                    postJSON("http://google.com", valuesArray);
+//                    postJSON("http://ztiet.rochestercs.org", valuesArray);
 //                } catch (IOException ie) {
 //                    ie.printStackTrace();
 //                }
@@ -382,8 +382,8 @@ public class MainActivity extends Activity implements SensorEventListener {
             in.close();
 
             Log.d("Main", "Response in universal: " + response.toString());
-        } catch (Exception exception) {
-            Log.d("Error", "Exception: " + exception);
+        } catch (Exception e) {
+            Log.d("Error", "Exception: " + e);
         }
 
         return response.toString();
