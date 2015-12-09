@@ -1,14 +1,12 @@
 package motionspeak.csc212.motionspeak;
 
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -27,8 +25,6 @@ import org.json.JSONObject;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -38,7 +34,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 
 
 public class MainActivity extends Activity implements SensorEventListener {
@@ -102,13 +97,12 @@ public class MainActivity extends Activity implements SensorEventListener {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-
                 if (mMagField > (baseValue + 15) || mMagField < (baseValue - 15)) {
-                    Log.d("MainActivity", "YOU ARE MOVING (if statement)");
+                    Log.d("MainActivity", "Movement detected");
                     isMoving = true;
                     listBooleans(isMoving);
                 } else {
-                    Log.d("MainActivity", "You're apparently not moving");
+                    Log.d("MainActivity", "No movement detected");
                     isMoving = false;
                     listBooleans(isMoving);
                 }
@@ -120,7 +114,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 numInRange();
                 sensorValues = sensorValues + System.currentTimeMillis() + " " + mMagField + ",";
-
             }
         }, 0, 500);
 
@@ -152,7 +145,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                         });
 
                     }
-                }, 0, 5000);
+                }, 0, 10000);
             }
         }, 10000);
 
@@ -188,6 +181,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     public void updateIcon(){
         if(isMoving == true){
             mImageView.setImageResource(R.drawable.ic_directions_run_white_24dp);
+            mTextView.setText("");
         } else if (isMoving == false) {
             mImageView.setImageResource(R.drawable.ic_directions_run_black_24dp);
         }
@@ -197,10 +191,10 @@ public class MainActivity extends Activity implements SensorEventListener {
         if (isMovingBooleans.contains(true)) {
             //mTextView.setText("You are moving!");
             mTextView.setText("");
-            Log.d("Main", "you are supposedly moving update view");
+            Log.d("Main", "Updating screen: no advice");
         } else if (!isMovingBooleans.contains(true)){
             mTextView.setText("Walk across the stage");
-            Log.d("Main", "you aRENT' !!moving update view");
+            Log.d("Main", "Updating screen: walk across stage");
 
         }
     }
@@ -267,7 +261,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 mTextView.setText("");
                 isRunning = true;
             } else if(isRunning == true){
-                cancelEverything();
+                //cancelEverything();
                 valuesArray = parseTextIntoJSON(sensorValues);
 
                 JSONObject obj = new JSONObject();
@@ -287,8 +281,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 //                }
 
                 //cancelEverything();
-                writeTextFile();
-                mTextView.setText(IDNumber);
+                //writeTextFile();
+                //mTextView.setText(IDNumber);
             }
             return true;
         }
